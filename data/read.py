@@ -17,11 +17,18 @@ class Node:
         self.val = val
         self.children = list()
 
+def createtrees(sentences):
+    trees = list()
+    for sent in sentences:
+        trees.append(createtree(sent))
+
+    return trees
+
 def createtree(sent):
     sent.sort(key=lambda x: x.parent)
-    p = sent.pop(0)
-    children = [x for x in sent if x.parent == p.parent]
-    p.children = children
+    top = sent.pop(0)
+    children = [x for x in sent if x.parent == top.parent]
+    top.children = children
     tovisit = children
     while tovisit:
         p = tovisit.pop()
@@ -29,17 +36,29 @@ def createtree(sent):
         p.children = children
         tovisit.append(children)
 
-def main():
-    filename = sys.argv[1]
+    root = Node()
+    root.children = [top]
+
+    return root
+
+def createsentences(filename):
+    sentences = list()
     with open(filename, 'r') as f:
         sent = list()
         for line in f:
             if line != '\n':
-                createtree(sent)
+                sentences.append(sent)
                 sent = list()
             else:
                 line = line.split()
                 sent.append(line)
+
+    return sentences
+
+def main():
+    filename = sys.argv[1]
+    sentences = createsentences(filename)
+    trees = createtrees(sentences)
 
 if __name__ == '__main__':
     main()
