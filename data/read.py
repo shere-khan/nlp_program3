@@ -8,10 +8,6 @@ class Data:
         self.tag = tag
         self.parent = parent
 
-    # def __str__(self):
-    #     return 'i: {0} word: {1} tag: {2} p: {3}'.format(self.index, self.word,
-    #                                                       self.tag, self.parent)
-
     def __repr__(self):
         return 'i: {0} word: {1} tag: {2} p: {3}'.format(self.index, self.word,
                                                          self.tag, self.parent)
@@ -26,7 +22,7 @@ class Node:
         self.children = list()
 
     def __repr__(self):
-        return 'data: {0}'.format(self.val)
+        return 'val: {0}'.format(self.val)
 
 def createtrees(sents):
     trees = list()
@@ -69,8 +65,21 @@ def createsentences(filename):
 
     return sents
 
+def collect_probs(trees):
+    probs = {}
+    for t in trees:
+        pass
+
+def dfs_count_probs(tree, probs):
+    tv = [tree.root.children[0]]
+    while tv:
+        cur = tv.pop()
+        for c in cur.children:
+            probs[cur.val.tag][c.val.tag] += 1
+        tv.extend(cur.children)
+
 if __name__ == '__main__':
     filename = sys.argv[1]
     sentences = createsentences(filename)
     trees = createtrees(sentences)
-    # todo search over trees and build arc probabilites
+    collect_probs(trees)
