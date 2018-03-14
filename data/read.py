@@ -1,4 +1,4 @@
-import sys
+import sys, copy
 
 
 class Data:
@@ -8,57 +8,69 @@ class Data:
         self.tag = tag
         self.parent = parent
 
+    # def __str__(self):
+    #     return 'i: {0} word: {1} tag: {2} p: {3}'.format(self.index, self.word,
+    #                                                       self.tag, self.parent)
+
+    def __repr__(self):
+        return 'i: {0} word: {1} tag: {2} p: {3}'.format(self.index, self.word,
+                                                         self.tag, self.parent)
+
 class Tree:
-    def __init__(self):
-        self.root = None
+    def __init__(self, root=None):
+        self.root = root
 
 class Node:
     def __init__(self, val=None):
         self.val = val
         self.children = list()
 
-def createtrees(sentences):
+    def __repr__(self):
+        return 'data: {0}'.format(self.val)
+
+def createtrees(sents):
     trees = list()
-    for sent in sentences:
+    for sent in sents:
         trees.append(createtree(sent))
 
     return trees
 
 def createtree(sent):
     sent.sort(key=lambda x: x.parent)
-    top = sent.pop(0)
-    children = [x for x in sent if x.parent == top.parent]
-    top.children = children
+    top = Node(sent.pop(0))
+    children = [Node(x) for x in sent if x.parent == top.val.index]
+    top.children = copy.copy(children)
     tovisit = children
     while tovisit:
-        p = tovisit.pop()
-        children = [x for x in sent if x.parent == p.parent]
-        p.children = children
-        tovisit.append(children)
+        cur = tovisit.pop()
+        curchildren = [Node(x) for x in sent if x.parent == cur.val.index]
+        cur.children = copy.copy(curchildren)
+        tovisit.extend(curchildren)
 
     root = Node()
     root.children = [top]
 
-    return root
+    t = Tree(root)
+
+    return t
 
 def createsentences(filename):
-    sentences = list()
+    sents = list()
     with open(filename, 'r') as f:
         sent = list()
         for line in f:
-            if line != '\n':
-                sentences.append(sent)
+            if line == '\n':
+                sents.append(sent)
                 sent = list()
             else:
-                line = line.split()
-                sent.append(line)
+                data = line.split()
+                sent.append(Data(index=int(data[0]), word=data[1], tag=data[2],
+                                 parent=int(data[3])))
 
-    return sentences
+    return sents
 
-def main():
+if __name__ == '__main__':
     filename = sys.argv[1]
     sentences = createsentences(filename)
     trees = createtrees(sentences)
-
-if __name__ == '__main__':
-    main()
+    # todo search over trees and build arc probabilites
