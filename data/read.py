@@ -52,6 +52,7 @@ def createtree(sent):
 
 def createsentences(filename):
     sents = list()
+    alltags = set()
     with open(filename, 'r') as f:
         sent = list()
         for line in f:
@@ -60,10 +61,11 @@ def createsentences(filename):
                 sent = list()
             else:
                 data = line.split()
+                alltags.add(data[2])
                 sent.append(Data(index=int(data[0]), word=data[1], tag=data[2],
                                  parent=int(data[3])))
 
-    return sents
+    return sents, list(alltags)
 
 def collect_probs(trees):
     larcs = {}
@@ -124,19 +126,15 @@ def paddict(dstar, dict):
 
     return dict
 
-
-
-
-
-
 if __name__ == '__main__':
     filename = sys.argv[1]
-    sentences = createsentences(filename)
+    sentences, alltags = createsentences(filename)
     trees = createtrees(sentences)
     larcs, rarcs = collect_probs(trees)
     # print('\nLeft Arc ARray Nonzero Counts\n')
     # printarcs(larcs)
     # print('\nRight Arc ARray Nonzero Counts\n')
     # printarcs(rarcs)
-    print('\nArc Confusion Array:\n')
-    printarcconfusion(larcs, rarcs)
+    pad_larc = paddict(dstar, larc)
+    # print('\nArc Confusion Array:\n')
+    # printarcconfusion(larcs, rarcs)
