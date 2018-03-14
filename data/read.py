@@ -24,6 +24,15 @@ class Node:
     def __repr__(self):
         return 'val: {0}'.format(self.val)
 
+class Stats:
+    def __init__(self):
+        self.sentences = None
+        self.tokens = None
+        self.postags = None
+        self.larcs = None
+        self.rarcs = None
+        self.rootarcs = None
+
 def createtrees(sents):
     trees = list()
     for sent in sents:
@@ -50,21 +59,24 @@ def createtree(sent):
 
     return t
 
-def createsentences(filename):
+def createsentences(filename, stats):
     sents = list()
     alltags = set()
+    sent_count = 0
     with open(filename, 'r') as f:
         sent = list()
         for line in f:
             if line == '\n':
                 sents.append(sent)
                 sent = list()
+                sent_count += 1
             else:
                 data = line.split()
                 alltags.add(data[2])
                 sent.append(Data(index=int(data[0]), word=data[1], tag=data[2],
                                  parent=int(data[3])))
 
+    stats.sentences = sent_count
     return sents, alltags
 
 def collect_probs(trees):
@@ -116,20 +128,30 @@ def printarcconfusion(larcs, rarcs):
                     print('[{0:>4}, {1:>4}, {2:>4}]'.format(d, d2[d], d1[d]), end=' ')
         print()
 
-def paddict(dstar, dict):
-    diff = list(dstar.difference(set(dict.keys())))
+def paddict(dstar, d):
+    diff = list(dstar.difference(set(d.keys())))
     for k in diff:
-        if k in dict:
+        if k in d:
             print('how')
             raise Exception
         else:
-            dict[k] = None
+            d[k] = None
 
-    return dict
+    return d
+
+def printstats(stats):
+    print('# sentences : {0}'.format(stats.sentences))
+    print('# tokens : {0}'.format(stats.tokens))
+    print('# POS tags : {0}'.format(stats.postags))
+    print('# Left-Arcs : {0}'.format(stats.larcs))
+    print('# Right-Arcs : {0}'.format(stats.rarcs))
+    print('# Root-Arcs : {0}'.format(stats.rootarcs))
+
 
 if __name__ == '__main__':
     filename = sys.argv[1]
-    sentences, alltags = createsentences(filename)
+    stats = Stats()
+    sentences, alltags = createsentences(filename, stats)
     trees = createtrees(sentences)
     larcs, rarcs = collect_probs(trees)
     print('\nLeft Arc Array Nonzero Counts\n')
