@@ -65,7 +65,7 @@ def createsentences(filename):
                 sent.append(Data(index=int(data[0]), word=data[1], tag=data[2],
                                  parent=int(data[3])))
 
-    return sents, list(alltags)
+    return sents, alltags
 
 def collect_probs(trees):
     larcs = {}
@@ -105,18 +105,19 @@ def printarcs(arcs):
         print()
 
 def printarcconfusion(larcs, rarcs):
-    for key1r, key1l in itertools.zip_longest(sorted(rarcs.keys()), sorted(larcs.keys())):
-        if key1r:
-            print('{0:>6}:'.format(key1r), end=' ')
-        if key1l:
-            print('{0:>6}:'.format(key1r), end=' ')
-        # val1 = arcs[key1]
-        # for key2, val2 in sorted(val1.items()):
-        #     print('[{0:>4}, {1:>4}]'.format(key2, val2), end=' ')
+    for item1, item2 in zip(sorted(rarcs.items()), sorted(larcs.items())):
+        print('{0:>6}:'.format(item1[0]), end=' ')
+        d1 = item1[1]
+        d2 = item2[1]
+        if d1 and d2:
+            intersect = set(d1.keys()).intersection(set(d2.keys()))
+            if intersect:
+                for d in sorted(intersect):
+                    print('[{0:>4}, {1:>4}, {2:>4}]'.format(d, d2[d], d1[d]), end=' ')
         print()
 
 def paddict(dstar, dict):
-    diff = list(set(dstar.keys()).difference(set(dict.keys())))
+    diff = list(dstar.difference(set(dict.keys())))
     for k in diff:
         if k in dict:
             print('how')
@@ -131,10 +132,11 @@ if __name__ == '__main__':
     sentences, alltags = createsentences(filename)
     trees = createtrees(sentences)
     larcs, rarcs = collect_probs(trees)
-    # print('\nLeft Arc ARray Nonzero Counts\n')
-    # printarcs(larcs)
-    # print('\nRight Arc ARray Nonzero Counts\n')
-    # printarcs(rarcs)
-    pad_larc = paddict(dstar, larc)
-    # print('\nArc Confusion Array:\n')
-    # printarcconfusion(larcs, rarcs)
+    print('\nLeft Arc Array Nonzero Counts\n')
+    printarcs(larcs)
+    print('\nRight Arc ARray Nonzero Counts\n')
+    printarcs(rarcs)
+    pad_larc = paddict(alltags, larcs)
+    pad_rarc = paddict(alltags, rarcs)
+    print('\nArc Confusion Array:\n')
+    printarcconfusion(larcs, rarcs)
