@@ -1,4 +1,4 @@
-import sys, copy
+import sys, copy, itertools
 
 
 class Data:
@@ -66,20 +66,77 @@ def createsentences(filename):
     return sents
 
 def collect_probs(trees):
-    probs = {}
+    larcs = {}
+    rarcs = {}
     for t in trees:
-        pass
+        dfs_count_probs(t, larcs, rarcs)
 
-def dfs_count_probs(tree, probs):
+    return larcs, rarcs
+
+def dfs_count_probs(tree, larcs, rarcs):
     tv = [tree.root.children[0]]
     while tv:
         cur = tv.pop()
         for c in cur.children:
-            probs[cur.val.tag][c.val.tag] += 1
+            if cur.val.index == c.val.index:
+                raise ValueError
+            elif cur.val.index > c.val.index:  # larc
+                insert_prob_into_dict(larcs, c.val.tag, cur.val.tag)
+            else:  # rarc
+                insert_prob_into_dict(rarcs, c.val.tag, cur.val.tag)
         tv.extend(cur.children)
+
+def insert_prob_into_dict(probs, key1, key2):
+    if key1 not in probs:
+        probs[key1] = {key2: 1}
+    elif key2 not in probs[key1]:
+        probs[key1][key2] = 1
+    else:
+        probs[key1][key2] += 1
+
+def printarcs(arcs):
+    for key1 in sorted(arcs.keys()):
+        print('{0:>6}:'.format(key1), end=' ')
+        val1 = arcs[key1]
+        for key2, val2 in sorted(val1.items()):
+            print('[{0:>4}, {1:>4}]'.format(key2, val2), end=' ')
+        print()
+
+def printarcconfusion(larcs, rarcs):
+    for key1r, key1l in itertools.zip_longest(sorted(rarcs.keys()), sorted(larcs.keys())):
+        if key1r:
+            print('{0:>6}:'.format(key1r), end=' ')
+        if key1l:
+            print('{0:>6}:'.format(key1r), end=' ')
+        # val1 = arcs[key1]
+        # for key2, val2 in sorted(val1.items()):
+        #     print('[{0:>4}, {1:>4}]'.format(key2, val2), end=' ')
+        print()
+
+def paddict(dstar, dict):
+    diff = list(set(dstar.keys()).difference(set(dict.keys())))
+    for k in diff:
+        if k in dict:
+            print('how')
+            raise Exception
+        else:
+            dict[k] = None
+
+    return dict
+
+
+
+
+
 
 if __name__ == '__main__':
     filename = sys.argv[1]
     sentences = createsentences(filename)
     trees = createtrees(sentences)
-    collect_probs(trees)
+    larcs, rarcs = collect_probs(trees)
+    # print('\nLeft Arc ARray Nonzero Counts\n')
+    # printarcs(larcs)
+    # print('\nRight Arc ARray Nonzero Counts\n')
+    # printarcs(rarcs)
+    print('\nArc Confusion Array:\n')
+    printarcconfusion(larcs, rarcs)
