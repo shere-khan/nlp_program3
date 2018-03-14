@@ -33,6 +33,11 @@ class Stats:
         self.rarcs = 0
         self.rootarcs = 0
 
+class Oracle:
+    def __init__(self, larc=None, rarc=None):
+        self.larc = larc
+        self.rarc = rarc
+
 def createtrees(sents):
     trees = list()
     for sent in sents:
@@ -163,16 +168,17 @@ def printstats(stats):
 if __name__ == '__main__':
     filename = sys.argv[1]
     stats = Stats()
+    o = Oracle()
     sentences, alltags = createsentences(filename, stats)
     trees = createtrees(sentences)
     larcs, rarcs = collect_probs(trees, stats)
     print('\nCorpus Statistics:\n')
     printstats(stats)
-    # print('\nLeft Arc Array Nonzero Counts\n')
-    # printarcs(larcs)
-    # print('\nRight Arc ARray Nonzero Counts\n')
-    # printarcs(rarcs)
-    # pad_larc = paddict(alltags, larcs)
-    # pad_rarc = paddict(alltags, rarcs)
-    # print('\nArc Confusion Array:\n')
-    # printarcconfusion(larcs, rarcs)
+    print('\nLeft Arc Array Nonzero Counts\n')
+    printarcs(larcs)
+    print('\nRight Arc ARray Nonzero Counts\n')
+    printarcs(rarcs)
+    pad_larc = paddict(alltags, larcs)
+    pad_rarc = paddict(alltags, rarcs)
+    print('\nArc Confusion Array:\n')
+    printarcconfusion(larcs, rarcs)
