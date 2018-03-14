@@ -1,4 +1,4 @@
-import sys, copy, itertools
+import sys, copy
 
 
 class Data:
@@ -26,12 +26,12 @@ class Node:
 
 class Stats:
     def __init__(self):
-        self.sentences = None
-        self.tokens = None
-        self.postags = None
-        self.larcs = None
-        self.rarcs = None
-        self.rootarcs = None
+        self.sentences = 0
+        self.tokens = 0
+        self.postags = 0
+        self.larcs = 0
+        self.rarcs = 0
+        self.rootarcs = 0
 
 def createtrees(sents):
     trees = list()
@@ -62,42 +62,54 @@ def createtree(sent):
 def createsentences(filename, stats):
     sents = list()
     alltags = set()
-    sent_count = 0
     with open(filename, 'r') as f:
         sent = list()
-        for line in f:
+        lines = f.readlines()
+        for i in range(len(lines)):
+            line = lines[i]
             if line == '\n':
                 sents.append(sent)
                 sent = list()
-                sent_count += 1
+                stats.sentences += 1
             else:
                 data = line.split()
+                stats.tokens += 1
                 alltags.add(data[2])
                 sent.append(Data(index=int(data[0]), word=data[1], tag=data[2],
                                  parent=int(data[3])))
+                if i + 1 == len(lines):
+                    sents.append(sent)
+                    sent = list()
+                    stats.sentences += 1
 
-    stats.sentences = sent_count
+    stats.postags = len(alltags)
+
     return sents, alltags
 
-def collect_probs(trees):
+def collect_probs(trees, stats):
     larcs = {}
     rarcs = {}
     for t in trees:
-        dfs_count_probs(t, larcs, rarcs)
+        dfs_count_probs(t, larcs, rarcs, stats)
 
     return larcs, rarcs
 
-def dfs_count_probs(tree, larcs, rarcs):
+def dfs_count_probs(tree, larcs, rarcs, stats):
     tv = [tree.root.children[0]]
+    stats.rootarcs += 1
     while tv:
         cur = tv.pop()
         for c in cur.children:
             if cur.val.index == c.val.index:
                 raise ValueError
-            elif cur.val.index > c.val.index:  # larc
+            elif cur.val.index > c.val.index:
+                # collect left-arc probs
                 insert_prob_into_dict(larcs, c.val.tag, cur.val.tag)
-            else:  # rarc
+                stats.larcs += 1
+            else:
+                # collect right-arc probs
                 insert_prob_into_dict(rarcs, c.val.tag, cur.val.tag)
+                stats.rarcs += 1
         tv.extend(cur.children)
 
 def insert_prob_into_dict(probs, key1, key2):
@@ -153,12 +165,14 @@ if __name__ == '__main__':
     stats = Stats()
     sentences, alltags = createsentences(filename, stats)
     trees = createtrees(sentences)
-    larcs, rarcs = collect_probs(trees)
-    print('\nLeft Arc Array Nonzero Counts\n')
-    printarcs(larcs)
-    print('\nRight Arc ARray Nonzero Counts\n')
-    printarcs(rarcs)
-    pad_larc = paddict(alltags, larcs)
-    pad_rarc = paddict(alltags, rarcs)
-    print('\nArc Confusion Array:\n')
-    printarcconfusion(larcs, rarcs)
+    larcs, rarcs = collect_probs(trees, stats)
+    print('\nCorpus Statistics:\n')
+    printstats(stats)
+    # print('\nLeft Arc Array Nonzero Counts\n')
+    # printarcs(larcs)
+    # print('\nRight Arc ARray Nonzero Counts\n')
+    # printarcs(rarcs)
+    # pad_larc = paddict(alltags, larcs)
+    # pad_rarc = paddict(alltags, rarcs)
+    # print('\nArc Confusion Array:\n')
+    # printarcconfusion(larcs, rarcs)
