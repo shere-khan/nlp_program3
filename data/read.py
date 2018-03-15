@@ -39,6 +39,9 @@ class Oracle:
         self.rarcs = dict()
         self.rarcs_alt = dict()
 
+    def initarcs(self):
+        pass
+
 def createtrees(sents):
     trees = list()
     for sent in sents:
