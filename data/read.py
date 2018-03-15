@@ -34,9 +34,10 @@ class Stats:
         self.rootarcs = 0
 
 class Oracle:
-    def __init__(self, larc=None, rarc=None):
-        self.larc = larc
-        self.rarc = rarc
+    def __init__(self):
+        self.larcs = dict()
+        self.rarcs = dict()
+        self.rarcs_alt = dict()
 
 def createtrees(sents):
     trees = list()
@@ -91,31 +92,33 @@ def createsentences(filename, stats):
 
     return sents, alltags
 
-def collect_probs(trees, stats):
-    larcs = {}
-    rarcs = {}
+def collect_probs(trees, stats, oracle):
     for t in trees:
-        dfs_count_probs(t, larcs, rarcs, stats)
+        dfs_count_probs(t, stats, oracle)
 
-    return larcs, rarcs
-
-def dfs_count_probs(tree, larcs, rarcs, stats):
-    tv = [tree.root.children[0]]
+def dfs_count_probs(tree, stats, oracle):
+    top = tree.root.children[0]
+    oracle.rarcs['root'] = {top.val.tag: 1}
     stats.rootarcs += 1
+
+    tv = [top]
     while tv:
         cur = tv.pop()
-        for c in cur.children:
-            if cur.val.index == c.val.index:
+        for child in cur.children:
+            if cur.val.index == child.val.index:
                 raise ValueError
-            elif cur.val.index > c.val.index:
+            elif cur.val.index > child.val.index:
                 # collect left-arc probs
-                insert_prob_into_dict(larcs, c.val.tag, cur.val.tag)
+                insert_prob_into_dict(oracle.larcs, child.val.tag, cur.val.tag)
                 stats.larcs += 1
             else:
                 # collect right-arc probs
-                insert_prob_into_dict(rarcs, c.val.tag, cur.val.tag)
+                insert_prob_into_dict(oracle.rarcs, child.val.tag, cur.val.tag)
+                insert_prob_into_dict(oracle.rarcs_alt, cur.val.tag, child.val.tag)
                 stats.rarcs += 1
         tv.extend(cur.children)
+
+    print('dklfj')
 
 def insert_prob_into_dict(probs, key1, key2):
     if key1 not in probs:
@@ -164,6 +167,30 @@ def printstats(stats):
     print('# Right-Arcs : {0}'.format(stats.rarcs))
     print('# Root-Arcs : {0}'.format(stats.rootarcs))
 
+def parsesentence(sent, oracle):
+    stck = list()
+    while sent:
+        if len(stck) < 2:
+            stck.append(sent.pop(0))
+        else:
+            i = stck[-2]
+            j = stck[-1]
+            larc = oracle.larcs[i][j]
+            rarc = oracle.rarcs[j][i]
+            if larc:
+                createarc(i, '<--', j)
+            elif rarc:
+                createarc(i, '-->', j)
+            else:
+                stck.append(sent.pop(0))
+    createarc('ROOT', '-->', stck.pop(0))
+
+def createarc(fst, snd, arc):
+    print('{0} {1} {2}'.format(fst, arc, snd))
+
+def createsent(file):
+    with open(file, 'r') as f:
+        return list(f.readlines())
 
 if __name__ == '__main__':
     filename = sys.argv[1]
@@ -171,14 +198,14 @@ if __name__ == '__main__':
     o = Oracle()
     sentences, alltags = createsentences(filename, stats)
     trees = createtrees(sentences)
-    larcs, rarcs = collect_probs(trees, stats)
+    collect_probs(trees, stats, o)
     print('\nCorpus Statistics:\n')
     printstats(stats)
     print('\nLeft Arc Array Nonzero Counts\n')
-    printarcs(larcs)
+    printarcs(o.larcs)
     print('\nRight Arc ARray Nonzero Counts\n')
-    printarcs(rarcs)
-    pad_larc = paddict(alltags, larcs)
-    pad_rarc = paddict(alltags, rarcs)
+    printarcs(o.rarcs)
+    pad_larc = paddict(alltags, o.larcs)
+    pad_rarc = paddict(alltags, o.rarcs)
     print('\nArc Confusion Array:\n')
-    printarcconfusion(larcs, rarcs)
+    printarcconfusion(o.larcs, o.rarcs)
