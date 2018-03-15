@@ -210,10 +210,14 @@ def createrarc(fst, snd):
 
 def createsent(file):
     sent = list()
+    print('\nInput Sentence:')
     with open(file, 'r') as f:
         for line in f:
-            sent.append(line.split()[0])
+            wt = line.split()[0]
+            sent.append(wt)
+            print(wt, end=' ')
 
+    print('\n')
     return sent
 
 if __name__ == '__main__':
