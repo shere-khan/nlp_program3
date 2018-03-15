@@ -153,29 +153,48 @@ def printstats(stats):
 
 def parsesentence(sent, oracle):
     stck = list()
-    while sent:
+    shift(stck, sent)
+    while stck:
+        if len(sent) == 0 and len(stck) == 1:
+            j = stck[-1]
+            createrarc('root', j)
+            break
         if len(stck) < 2:
             shift(stck, sent)
         else:
             i = stck[-2].split('/')
             j = stck[-1].split('/')
-            larc = oracle.larcs[i[1]][j[1]]
-            rarc = oracle.rarcs[i[1]][j[1]]
-            if (larc and rarc) and larc > rarc:
-                fst = stck.pop(-2)
-                snd = stck[-1]
-                createlarc(fst, snd)
-            elif rarc and not larc:
+            itag = i[1]
+            jtag = j[1]
+
+            # Special cases
+            if itag[0] == 'V' and (jtag[0] == '.' or jtag[0] == 'R'):
                 fst = stck[-2]
                 snd = stck.pop(-1)
                 createrarc(fst, snd)
-            elif larc and not rarc:
-                fst = stck.pop(-2)
-                snd = stck[-1]
-                createlarc(fst, snd)
-            else:
+            elif len(stck) > 2 and itag[0] == 'I' and jtag[0] == '.':
+                swap(stck, sent)
+            elif len(sent) > 0 and (itag[0] == 'V' or itag[0] == 'I') and (
+                    jtag[0] == 'D' or jtag[0] == 'I' or jtag[0] == 'J' or jtag[
+                    0] == 'P' or jtag[0] == 'R'):
                 shift(stck, sent)
-    # createarc('ROOT', '-->', stck.pop(0))
+            else:  # regular case
+                larc = oracle.larcs[itag][jtag]
+                rarc = oracle.rarcs[itag][jtag]
+                if larc > rarc:
+                    fst = stck.pop(-2)
+                    snd = stck[-1]
+                    createlarc(fst, snd)
+                elif larc < rarc:
+                    fst = stck[-2]
+                    snd = stck.pop(-1)
+                    createrarc(fst, snd)
+                else:
+                    print('larc and rarc are equal')
+                    raise Exception
+
+def swap(stck, buf):
+    buf.insert(0, stck.pop(-2))
 
 def shift(stck, sent):
     print('SHIFT')
@@ -213,6 +232,6 @@ if __name__ == '__main__':
     printarcs(o.rarcs)
     print('\nArc Confusion Array:\n')
     printarcconfusion(o.larcs, o.rarcs)
-    # sent = createsent(sys.argv[2])
-    # print('\nParsing Actions and Transitions\n')
-    # parsesentence(sent, o)
+    sent = createsent(sys.argv[2])
+    print('\nParsing Actions and Transitions\n')
+    parsesentence(sent, o)
