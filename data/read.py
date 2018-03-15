@@ -143,17 +143,6 @@ def printarcconfusion(larcs, rarcs):
                         print('[{0:>4}, {1:>4}, {2:>4}]'.format(d, d2[d], d1[d]), end=' ')
         print()
 
-def paddict(dstar, d):
-    diff = list(dstar.difference(set(d.keys())))
-    for k in diff:
-        if k in d:
-            print('how')
-            raise Exception
-        else:
-            d[k] = None
-
-    return d
-
 def printstats(stats):
     print('# sentences : {0}'.format(stats.sentences))
     print('# tokens : {0}'.format(stats.tokens))
@@ -192,7 +181,6 @@ def shift(stck, sent):
     print('SHIFT')
     stck.append(sent.pop(0))
 
-
 def createlarc(fst, snd):
     print('Left-Arc:', end=' ')
     print('{0} <-- {1}'.format(fst, snd))
@@ -219,12 +207,10 @@ if __name__ == '__main__':
     collect_probs(trees, stats, o)
     print('\nCorpus Statistics:\n')
     printstats(stats)
-    # print('\nLeft Arc Array Nonzero Counts\n')
-    # printarcs(o.larcs)
-    # print('\nRight Arc ARray Nonzero Counts\n')
-    # printarcs(o.rarcs)
-    # pad_larc = paddict(alltags, o.larcs)
-    # pad_rarc = paddict(alltags, o.rarcs)
+    print('\nLeft Arc Array Nonzero Counts\n')
+    printarcs(o.larcs)
+    print('\nRight Arc ARray Nonzero Counts\n')
+    printarcs(o.rarcs)
     print('\nArc Confusion Array:\n')
     printarcconfusion(o.larcs, o.rarcs)
     # sent = createsent(sys.argv[2])
