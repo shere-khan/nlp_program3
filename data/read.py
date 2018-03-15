@@ -153,8 +153,12 @@ def printstats(stats):
 
 def parsesentence(sent, oracle):
     stck = list()
+    print(stck, end=' ')
+    print(sent, end=' ')
     shift(stck, sent)
     while stck:
+        print(stck, end=' ')
+        print(sent, end=' ')
         if len(sent) == 0 and len(stck) == 1:
             j = stck[-1]
             createrarc('root', j)
