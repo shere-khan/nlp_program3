@@ -39,6 +39,14 @@ class Oracle:
         self.rarcs = dict()
         self.rarcs_alt = dict()
 
+    def initarcs(self, alltags):
+        for t1 in sorted(alltags):
+            self.larcs[t1] = {}
+            self.rarcs[t1] = {}
+            for t2 in sorted(alltags):
+                self.larcs[t1][t2] = 0
+                self.rarcs[t1][t2] = 0
+
 def createtrees(sents):
     trees = list()
     for sent in sents:
@@ -98,9 +106,6 @@ def collect_probs(trees, stats, oracle):
 
 def dfs_count_probs(tree, stats, oracle):
     top = tree.root.children[0]
-    oracle.rarcs['root'] = {top.val.tag: 1}
-    stats.rootarcs += 1
-
     tv = [top]
     while tv:
         cur = tv.pop()
@@ -109,29 +114,20 @@ def dfs_count_probs(tree, stats, oracle):
                 raise ValueError
             elif cur.val.index > child.val.index:
                 # collect left-arc probs
-                insert_prob_into_dict(oracle.larcs, child.val.tag, cur.val.tag)
+                oracle.larcs[child.val.tag][cur.val.tag] += 1
                 stats.larcs += 1
             else:
                 # collect right-arc probs
-                insert_prob_into_dict(oracle.rarcs, child.val.tag, cur.val.tag)
-                insert_prob_into_dict(oracle.rarcs_alt, cur.val.tag, child.val.tag)
+                oracle.rarcs[child.val.tag][cur.val.tag] += 1
                 stats.rarcs += 1
         tv.extend(cur.children)
 
-def insert_prob_into_dict(probs, key1, key2):
-    if key1 not in probs:
-        probs[key1] = {key2: 1}
-    elif key2 not in probs[key1]:
-        probs[key1][key2] = 1
-    else:
-        probs[key1][key2] += 1
-
 def printarcs(arcs):
-    for key1 in sorted(arcs.keys()):
+    for key1, val1 in sorted(arcs.items()):
         print('{0:>6}:'.format(key1), end=' ')
-        val1 = arcs[key1]
         for key2, val2 in sorted(val1.items()):
-            print('[{0:>4}, {1:>4}]'.format(key2, val2), end=' ')
+            if val2 > 0:
+                print('[{0:>4}, {1:>4}]'.format(key2, val2), end=' ')
         print()
 
 def printarcconfusion(larcs, rarcs):
@@ -143,19 +139,9 @@ def printarcconfusion(larcs, rarcs):
             intersect = set(d1.keys()).intersection(set(d2.keys()))
             if intersect:
                 for d in sorted(intersect):
-                    print('[{0:>4}, {1:>4}, {2:>4}]'.format(d, d2[d], d1[d]), end=' ')
+                    if d2[d] > 0 and d1[d] > 0:
+                        print('[{0:>4}, {1:>4}, {2:>4}]'.format(d, d2[d], d1[d]), end=' ')
         print()
-
-def paddict(dstar, d):
-    diff = list(dstar.difference(set(d.keys())))
-    for k in diff:
-        if k in d:
-            print('how')
-            raise Exception
-        else:
-            d[k] = None
-
-    return d
 
 def printstats(stats):
     print('# sentences : {0}'.format(stats.sentences))
@@ -167,34 +153,52 @@ def printstats(stats):
 
 def parsesentence(sent, oracle):
     stck = list()
-    while sent:
+    shift(stck, sent)
+    while stck:
+        if len(sent) == 0 and len(stck) == 1:
+            j = stck[-1]
+            createrarc('root', j)
+            break
         if len(stck) < 2:
             shift(stck, sent)
         else:
             i = stck[-2].split('/')
             j = stck[-1].split('/')
-            larc = oracle.larcs[i[1]][j[1]]
-            rarc = oracle.rarcs[i[1]][j[1]]
-            if (larc and rarc) and larc > rarc:
-                fst = stck.pop(-2)
-                snd = stck[-1]
-                createlarc(fst, snd)
-            elif rarc and not larc:
+            itag = i[1]
+            jtag = j[1]
+
+            # Special cases
+            if itag[0] == 'V' and (jtag[0] == '.' or jtag[0] == 'R'):
                 fst = stck[-2]
                 snd = stck.pop(-1)
                 createrarc(fst, snd)
-            elif larc and not rarc:
-                fst = stck.pop(-2)
-                snd = stck[-1]
-                createlarc(fst, snd)
-            else:
+            elif len(stck) > 2 and itag[0] == 'I' and jtag[0] == '.':
+                swap(stck, sent)
+            elif len(sent) > 0 and (itag[0] == 'V' or itag[0] == 'I') and (
+                    jtag[0] == 'D' or jtag[0] == 'I' or jtag[0] == 'J' or jtag[
+                    0] == 'P' or jtag[0] == 'R'):
                 shift(stck, sent)
-    # createarc('ROOT', '-->', stck.pop(0))
+            else:  # regular case
+                larc = oracle.larcs[itag][jtag]
+                rarc = oracle.rarcs[itag][jtag]
+                if larc > rarc:
+                    fst = stck.pop(-2)
+                    snd = stck[-1]
+                    createlarc(fst, snd)
+                elif larc < rarc:
+                    fst = stck[-2]
+                    snd = stck.pop(-1)
+                    createrarc(fst, snd)
+                else:
+                    print('larc and rarc are equal')
+                    raise Exception
+
+def swap(stck, buf):
+    buf.insert(0, stck.pop(-2))
 
 def shift(stck, sent):
     print('SHIFT')
     stck.append(sent.pop(0))
-
 
 def createlarc(fst, snd):
     print('Left-Arc:', end=' ')
@@ -217,6 +221,7 @@ if __name__ == '__main__':
     stats = Stats()
     o = Oracle()
     sentences, alltags = createsentences(filename, stats)
+    o.initarcs(alltags)
     trees = createtrees(sentences)
     collect_probs(trees, stats, o)
     print('\nCorpus Statistics:\n')
@@ -225,8 +230,6 @@ if __name__ == '__main__':
     printarcs(o.larcs)
     print('\nRight Arc ARray Nonzero Counts\n')
     printarcs(o.rarcs)
-    pad_larc = paddict(alltags, o.larcs)
-    pad_rarc = paddict(alltags, o.rarcs)
     print('\nArc Confusion Array:\n')
     printarcconfusion(o.larcs, o.rarcs)
     sent = createsent(sys.argv[2])
