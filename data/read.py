@@ -107,6 +107,7 @@ def collect_probs(trees, stats, oracle):
 def dfs_count_probs(tree, stats, oracle):
     top = tree.root.children[0]
     tv = [top]
+    stats.rootarcs += 1
     while tv:
         cur = tv.pop()
         for child in cur.children:
@@ -161,7 +162,7 @@ def parsesentence(sent, oracle):
         print(sent, end=' ')
         if len(sent) == 0 and len(stck) == 1:
             j = stck[-1]
-            createrarc('root', j)
+            createrarc('ROOT', j)
             break
         if len(stck) < 2:
             shift(stck, sent)
