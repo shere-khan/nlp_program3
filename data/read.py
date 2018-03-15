@@ -183,6 +183,7 @@ def parsesentence(sent, oracle):
                     jtag[0] == 'D' or jtag[0] == 'I' or jtag[0] == 'J' or jtag[
                     0] == 'P' or jtag[0] == 'R'):
                 shift(stck, sent)
+
             else:  # regular case
                 larc = oracle.larcs[itag][jtag]
                 rarc = oracle.rarcs[itag][jtag]
