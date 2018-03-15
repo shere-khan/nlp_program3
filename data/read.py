@@ -118,8 +118,6 @@ def dfs_count_probs(tree, stats, oracle):
                 stats.rarcs += 1
         tv.extend(cur.children)
 
-    print('dklfj')
-
 def insert_prob_into_dict(probs, key1, key2):
     if key1 not in probs:
         probs[key1] = {key2: 1}
@@ -171,26 +169,48 @@ def parsesentence(sent, oracle):
     stck = list()
     while sent:
         if len(stck) < 2:
-            stck.append(sent.pop(0))
+            shift(stck, sent)
         else:
-            i = stck[-2]
-            j = stck[-1]
-            larc = oracle.larcs[i][j]
-            rarc = oracle.rarcs[j][i]
-            if larc:
-                createarc(i, '<--', j)
-            elif rarc:
-                createarc(i, '-->', j)
+            i = stck[-2].split('/')
+            j = stck[-1].split('/')
+            larc = oracle.larcs[i[1]][j[1]]
+            rarc = oracle.rarcs[i[1]][j[1]]
+            if (larc and rarc) and larc > rarc:
+                fst = stck.pop(-2)
+                snd = stck[-1]
+                createlarc(fst, snd)
+            elif rarc and not larc:
+                fst = stck[-2]
+                snd = stck.pop(-1)
+                createrarc(fst, snd)
+            elif larc and not rarc:
+                fst = stck.pop(-2)
+                snd = stck[-1]
+                createlarc(fst, snd)
             else:
-                stck.append(sent.pop(0))
-    createarc('ROOT', '-->', stck.pop(0))
+                shift(stck, sent)
+    # createarc('ROOT', '-->', stck.pop(0))
 
-def createarc(fst, snd, arc):
-    print('{0} {1} {2}'.format(fst, arc, snd))
+def shift(stck, sent):
+    print('SHIFT')
+    stck.append(sent.pop(0))
+
+
+def createlarc(fst, snd):
+    print('Left-Arc:', end=' ')
+    print('{0} <-- {1}'.format(fst, snd))
+
+def createrarc(fst, snd):
+    print('Right-Arc:', end=' ')
+    print('{0} --> {1}'.format(fst, snd))
 
 def createsent(file):
+    sent = list()
     with open(file, 'r') as f:
-        return list(f.readlines())
+        for line in f:
+            sent.append(line.split()[0])
+
+    return sent
 
 if __name__ == '__main__':
     filename = sys.argv[1]
@@ -209,3 +229,6 @@ if __name__ == '__main__':
     pad_rarc = paddict(alltags, o.rarcs)
     print('\nArc Confusion Array:\n')
     printarcconfusion(o.larcs, o.rarcs)
+    sent = createsent(sys.argv[2])
+    print('\nParsing Actions and Transitions\n')
+    parsesentence(sent, o)
