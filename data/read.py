@@ -124,6 +124,7 @@ def dfs_count_probs(tree, stats, oracle):
         tv.extend(cur.children)
 
 def printarcs(arcs):
+    toprint = ''
     for key1, val1 in sorted(arcs.items()):
         print('{0:>6}:'.format(key1), end=' ')
         for key2, val2 in sorted(val1.items()):
@@ -132,6 +133,7 @@ def printarcs(arcs):
         print()
 
 def printarcconfusion(larcs, rarcs):
+    num_conf_arcs = 0
     for item1, item2 in zip(sorted(rarcs.items()), sorted(larcs.items())):
         print('{0:>6}:'.format(item1[0]), end=' ')
         d1 = item1[1]
@@ -141,8 +143,11 @@ def printarcconfusion(larcs, rarcs):
             if intersect:
                 for d in sorted(intersect):
                     if d2[d] > 0 and d1[d] > 0:
+                        num_conf_arcs += 1
                         print('[{0:>4}, {1:>4}, {2:>4}]'.format(d, d2[d], d1[d]), end=' ')
         print()
+    print('\n')
+    print("\t\tNumber of confusing arcs = {0}".format(num_conf_arcs))
 
 def printstats(stats):
     print('# sentences : {0}'.format(stats.sentences))
@@ -242,6 +247,6 @@ if __name__ == '__main__':
     printarcs(o.rarcs)
     print('\nArc Confusion Array:\n')
     printarcconfusion(o.larcs, o.rarcs)
-    sent = createsent(sys.argv[2])
-    print('\nParsing Actions and Transitions\n')
-    parsesentence(sent, o)
+    # sent = createsent(sys.argv[2])
+    # print('\nParsing Actions and Transitions\n')
+    # parsesentence(sent, o)
