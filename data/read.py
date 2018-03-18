@@ -205,6 +205,7 @@ def parsesentence(sent, oracle):
                     raise Exception
 
 def swap(stck, buf):
+    print('SWAP')
     buf.insert(0, stck.pop(-2))
 
 def shift(stck, sent):
