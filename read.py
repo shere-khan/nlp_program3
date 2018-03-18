@@ -167,7 +167,7 @@ def parsesentence(sent, oracle):
         print(sent, end=' ')
         if len(sent) == 0 and len(stck) == 1:
             j = stck[-1]
-            createrarc('ROOT', j)
+            createarc('ROOT', j)
             break
         if len(stck) < 2:
             shift(stck, sent)
@@ -219,6 +219,10 @@ def createlarc(fst, snd):
 def createrarc(fst, snd):
     print('Right-Arc:', end=' ')
     print('{0} --> {1}'.format(fst, snd))
+
+def createarc(fst, snd):
+    print('{0} --> {1}'.format(fst, snd))
+
 
 def createsent(file):
     sent = list()
