@@ -237,10 +237,9 @@ def createsent(file):
     return sent
 
 if __name__ == '__main__':
-    filename = sys.argv[1]
     stats = Stats()
     o = Oracle()
-    sentences, alltags = createsentences(filename, stats)
+    sentences, alltags = createsentences('wsj-clean.txt', stats)
     o.initarcs(alltags)
     trees = createtrees(sentences)
     collect_probs(trees, stats, o)
@@ -252,6 +251,6 @@ if __name__ == '__main__':
     printarcs(o.rarcs)
     print('\nArc Confusion Array:\n')
     printarcconfusion(o.larcs, o.rarcs)
-    sent = createsent(sys.argv[2])
+    sent = createsent(sys.argv[1])
     print('\nParsing Actions and Transitions\n')
     parsesentence(sent, o)
